@@ -15,7 +15,7 @@
         .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 10px; font-weight: 600; color: #fff; }
         .badge-status { font-size: 0.85rem; padding: 6px 14px; border-radius: 20px; }
         .result-box { background-color: #070b13; border: 1px solid #24324f; border-radius: 12px; padding: 18px; margin-top: 15px; }
-        .highlight-dot { color: #4ade80; font-weight: bold; background: rgba(74, 222, 128, 0.1); padding: 2px 6px; border-radius: 4px; }
+        .highlight-dot { color: #4ade80; font-weight: bold; background: rgba(74, 222, 128, 0.15); padding: 2px 8px; border-radius: 4px; }
     </style>
 </head>
 <body class="p-3 p-md-4">
@@ -34,35 +34,30 @@
             <span class="badge bg-success badge-status"><i class="bi bi-cloud-check me-1"></i> Cloudflare Online</span>
         </div>
 
+        <!-- Thong bao trang thai -->
+        <div id="saveToast" class="alert alert-success py-2 mb-3" style="display: none;">
+            <i class="bi bi-check-circle-fill me-2"></i> <span id="saveToastMsg">Đã lưu cấu hình thành công!</span>
+        </div>
+
         <!-- Cấu hình API -->
         <div class="card p-4 mb-3">
             <h5 class="fw-bold mb-3"><i class="bi bi-sliders text-info me-2"></i>Cấu hình Bộ não AI (Gemini 3.x)</h5>
             <div class="mb-3">
                 <label class="form-label text-light">Google Gemini API Key:</label>
                 <div class="input-group">
-                    <input type="password" id="apiKeyInput" class="form-control" placeholder="Dán mã API Key dạng AIzaSy..." onchange="saveConfig(false)">
-                    <button class="btn btn-outline-secondary" type="button" onclick="toggleApiKey()"><i class="bi bi-eye" id="eyeIcon"></i></button>
+                    <input type="password" id="apiKeyInput" class="form-control" placeholder="Dán mã API Key của bạn">
+                    <button class="btn btn-outline-secondary" type="button" id="toggleKeyBtn" onclick="toggleApiKey()"><i class="bi bi-eye" id="eyeIcon"></i></button>
                 </div>
-                <small class="text-secondary">Lấy API Key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" class="text-info">aistudio.google.com/apikey</a> (Bắt đầu bằng <code>AIzaSy...</code>)</small>
+                <small class="text-secondary">Lấy miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" class="text-info">aistudio.google.com/apikey</a> (Mã được lưu an toàn trong trình duyệt của bạn).</small>
             </div>
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label text-light">Chọn Model Gemini 3.x:</label>
                     <select id="modelSelect" class="form-select" onchange="handleModelChange()">
-                        <optgroup label="⚡ Dòng Gemini 3.x Flash (Siêu tốc độ & AI Agent)">
-                            <option value="gemini-3.7-flash" selected>Gemini 3.7 Flash (Chủ lực - Siêu tốc & Thinking)</option>
-                            <option value="gemini-3.6-flash">Gemini 3.6 Flash (AI Agent & Giải đề nhanh)</option>
-                            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Rút gọn, siêu tiết kiệm)</option>
-                            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (Bản nhẹ tiêu chuẩn)</option>
-                        </optgroup>
-                        <optgroup label="🧠 Dòng Gemini 3.x Pro (Suy luận sâu & Kiến thức nặng)">
-                            <option value="gemini-3.1-pro">Gemini 3.1 Pro (Preview - Suy luận cao cấp, Triết học, Toán)</option>
-                        </optgroup>
-                        <option value="custom">✏️ Nhập Model 3.x tùy chỉnh khác...</option>
+                        <option value="gemini-3.7-flash" selected>Gemini 3.7 Flash (Chủ lực - Siêu tốc & Thinking)</option>
+                        <option value="gemini-3.6-flash">Gemini 3.6 Flash (AI Agent & Giải đề nhanh)</option>
+                        <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Rút gọn, siêu tiết kiệm)</option>
                     </select>
-                    <div id="customModelGroup" class="mt-2" style="display: none;">
-                        <input type="text" id="customModelInput" class="form-control" placeholder="Nhập model ID, ví dụ: gemini-3.7-flash-thinking">
-                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-light">Tên miền hệ thống thi:</label>
@@ -70,7 +65,7 @@
                 </div>
             </div>
             <div class="mt-3 text-end">
-                <button class="btn btn-primary px-4" onclick="saveConfig(true)"><i class="bi bi-save me-1"></i> Lưu cấu hình</button>
+                <button class="btn btn-primary px-4" onclick="saveConfig()"><i class="bi bi-save me-1"></i> Lưu cấu hình</button>
             </div>
         </div>
 
@@ -78,9 +73,9 @@
         <div class="card p-4 mb-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="fw-bold mb-0"><i class="bi bi-lightning-charge text-warning me-2"></i>Thử nghiệm giải đề mẫu (Test Run)</h5>
-                <button class="btn btn-warning btn-sm fw-bold px-3" onclick="runTest()"><i class="bi bi-play-fill"></i> Chạy thử ngay</button>
+                <button class="btn btn-warning fw-bold px-4" id="runTestBtn" onclick="runTest()"><i class="bi bi-play-fill"></i> Chạy thử ngay</button>
             </div>
-            <p class="text-secondary small mb-2">Gửi đề thi mẫu lên Cloudflare Edge để Gemini 3.x giải & tiêm đáp án.</p>
+            <p class="text-secondary small mb-2">Mô phỏng giải 4 dạng đề và tự động gắn dấu chấm <code>.</code> cho câu đúng.</p>
             <div id="testResultArea" style="display: none;">
                 <div class="result-box" id="testResultContent"></div>
             </div>
@@ -103,29 +98,15 @@
             const icon = document.getElementById("eyeIcon");
             if (input.type === "password") {
                 input.type = "text";
-                icon.classList.replace("bi-eye", "bi-eye-slash");
+                icon.className = "bi bi-eye-slash";
             } else {
                 input.type = "password";
-                icon.classList.replace("bi-eye-slash", "bi-eye");
+                icon.className = "bi bi-eye";
             }
         }
 
         function handleModelChange() {
-            const select = document.getElementById("modelSelect");
-            const customGroup = document.getElementById("customModelGroup");
-            if (select.value === "custom") {
-                customGroup.style.display = "block";
-            } else {
-                customGroup.style.display = "none";
-            }
-        }
-
-        function getSelectedModel() {
-            const select = document.getElementById("modelSelect");
-            if (select.value === "custom") {
-                return document.getElementById("customModelInput").value.trim() || "gemini-3.7-flash";
-            }
-            return select.value;
+            saveConfig(false);
         }
 
         function loadConfig() {
@@ -133,51 +114,47 @@
             const model = localStorage.getItem("gemini_model") || "gemini-3.7-flash";
             const host = localStorage.getItem("target_host") || "lms.ictu.edu.vn";
             if (key) document.getElementById("apiKeyInput").value = key;
-            
-            const select = document.getElementById("modelSelect");
-            let found = false;
-            for (let opt of select.options) {
-                if (opt.value === model) {
-                    select.value = model;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found && model) {
-                select.value = "custom";
-                document.getElementById("customModelGroup").style.display = "block";
-                document.getElementById("customModelInput").value = model;
-            }
-
+            document.getElementById("modelSelect").value = model;
             document.getElementById("targetHostInput").value = host;
         }
 
-        function saveConfig(showAlert = true) {
+        function saveConfig(showToast = true) {
             const key = document.getElementById("apiKeyInput").value.trim();
-            const model = getSelectedModel();
+            const model = document.getElementById("modelSelect").value;
             const host = document.getElementById("targetHostInput").value.trim();
             localStorage.setItem("gemini_api_key", key);
             localStorage.setItem("gemini_model", model);
             localStorage.setItem("target_host", host);
-            if (showAlert) alert("Đã lưu cấu hình thành công!");
+            
+            if (showToast) {
+                const toast = document.getElementById("saveToast");
+                const msg = document.getElementById("saveToastMsg");
+                msg.innerText = "Đã lưu cấu hình thành công (Model: " + model + ")!";
+                toast.style.display = "block";
+                setTimeout(() => { toast.style.display = "none"; }, 3000);
+            }
         }
 
         async function runTest() {
             const apiKey = document.getElementById("apiKeyInput").value.trim();
-            const model = getSelectedModel();
+            const model = document.getElementById("modelSelect").value;
+            const btn = document.getElementById("runTestBtn");
+
             if (!apiKey) {
-                alert("Vui lòng nhập Google Gemini API Key vào ô trên trước khi bấm Chạy thử!");
+                alert("Vui lòng dán mã Google Gemini API Key vào ô phía trên!");
                 document.getElementById("apiKeyInput").focus();
                 return;
             }
 
-            // Tu dong luu
             saveConfig(false);
+
+            btn.disabled = true;
+            btn.innerHTML = "<span class="spinner-border spinner-border-sm me-1"></span> Đang giải...";
 
             const area = document.getElementById("testResultArea");
             const box = document.getElementById("testResultContent");
             area.style.display = "block";
-            box.innerHTML = `<div class="text-secondary"><span class="spinner-border spinner-border-sm me-2 text-warning"></span> Cloudflare Edge đang kết nối Gemini AI (${model}) để giải đề...</div>`;
+            box.innerHTML = `<div class="text-secondary py-2"><span class="spinner-border spinner-border-sm me-2 text-warning"></span> Cloudflare Edge đang gửi đề sang Gemini AI (${model}) để giải...</div>`;
 
             try {
                 const res = await fetch("/api/test-solve", {
@@ -191,7 +168,7 @@
                 if (res.ok && data.status === "success") {
                     let html = `<div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle me-1"></i> Đã giải & tiêm đáp án thành công (${data.time_ms} ms)</span>
-                        <small class="text-secondary fw-bold">${data.model}</small>
+                        <small class="text-info fw-bold">${data.model}</small>
                     </div>`;
                     data.questions.forEach((q, i) => {
                         html += `<div class="mb-3 pb-3 border-bottom border-secondary">`;
@@ -209,13 +186,14 @@
                     const errMsg = data.message || data.error || "Không thể kết nối đến API";
                     box.innerHTML = `<div class="alert alert-danger mb-0">
                         <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Lỗi từ Google Gemini:</h6>
-                        <p class="small mb-2">${errMsg}</p>
-                        <hr class="my-2">
-                        <small class="text-light"><strong>Gợi ý khắc phục:</strong> Hãy kiểm tra lại mã API Key trên <a href="https://aistudio.google.com/apikey" target="_blank" class="text-warning text-decoration-underline">Google AI Studio</a>. Mã API Key chuẩn phải bắt đầu bằng <code>AIzaSy...</code> và không có khoảng trắng thừa.</small>
+                        <p class="small mb-0">${errMsg}</p>
                     </div>`;
                 }
             } catch (e) {
-                box.innerHTML = `<div class="alert alert-danger mb-0"><i class="bi bi-wifi-off me-2"></i>Lỗi kết nối mạng: ${e}</div>`;
+                box.innerHTML = `<div class="alert alert-danger mb-0"><i class="bi bi-wifi-off me-2"></i>Lỗi kết nối: ${e}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "<i class="bi bi-play-fill"></i> Chạy thử ngay";
             }
         }
 
