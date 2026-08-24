@@ -5,11 +5,17 @@ import urllib.parse
 import os
 import re
 
+# Cho phep Mitmproxy xu ly bat dong bo khong chan event loop
+try:
+    from mitmproxy.script import concurrent
+except ImportError:
+    def concurrent(fn):
+        return fn
+
 CLOUDFLARE_URL = os.environ.get("CLOUDFLARE_URL", "https://ictu-quiz-assistant.qtu1053.workers.dev").rstrip("/")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 SELECTED_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 
-# Danh sach ten mien chinh xac can bat goi tin
 TARGET_HOST_SUFFIXES = (
     "ictu.edu.vn",
     "ictu.vn",
@@ -27,6 +33,7 @@ def is_target_url(flow_url: str, flow_host: str) -> bool:
         return True
     return False
 
+@concurrent
 def response(flow):
     try:
         url = flow.request.pretty_url
@@ -39,18 +46,15 @@ def response(flow):
         if "application/json" not in content_type:
             return
             
-        # FIX Bug 4: Kiem tra domain chinh xac thay vi substring toan bo URL
         if not is_target_url(url, host):
             return
 
         raw_json = json.loads(flow.response.text)
         
-        # FIX Bug 5: Signature bat de thi chinh xac (cau hoi va danh sach lua chon)
         is_quiz = False
         if isinstance(raw_json, dict):
             keys = set(raw_json.keys())
             if any(k in keys for k in ["questions", "question", "attempt", "quiz", "data"]):
-                # Kiem tra co cau hoi ben trong
                 q_list = raw_json.get("questions") or raw_json.get("question") or raw_json.get("data") or []
                 if isinstance(q_list, list) and len(q_list) > 0:
                     first_item = q_list[0]
@@ -75,25 +79,28 @@ def response(flow):
         req = urllib.request.Request(
             f"{CLOUDFLARE_URL}/api/solve",
             data=json.dumps(req_payload).encode("utf-8"),
-            headers={"Content-Type": "application/json", "User-Agent": "ICTU-Quiz-Client/2.0"},
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
             method="POST"
         )
         
         try:
             with urllib.request.urlopen(req, timeout=10.0) as res:
-                # FIX Bug 2: Kiem tra HTTP 200 va khong co error payload truoc khi ghi de
                 if res.status == 200:
                     modified = json.loads(res.read().decode("utf-8"))
                     if isinstance(modified, (dict, list)) and "error" not in modified:
                         flow.response.text = json.dumps(modified, ensure_ascii=False)
                         print("[✨] CLOUDFLARE DA TIEM DAP AN THANH CONG!")
                     else:
-                        print(f"[!] Worker tra ve loi: {modified.get("error")}, giu nguyen de goc.")
+                        # FIX 1: Single quotes inside f-string for Python <= 3.11 compatibility
+                        err_msg = modified.get("error") if isinstance(modified, dict) else "Unknown error"
+                        print("[!] Worker tra ve loi: " + str(err_msg) + ", giu nguyen de goc.")
                 else:
-                    print(f"[!] Worker HTTP {res.status}, giu nguyen de goc.")
+                    print("[!] Worker HTTP " + str(res.status) + ", giu nguyen de goc.")
         except Exception as api_err:
-            print(f"[!] Khong the ket noi toi Worker ({api_err}), giu nguyen de goc an toan.")
+            print("[!] Khong the ket noi toi Worker (" + str(api_err) + "), giu nguyen de goc an toan.")
             
     except Exception as e:
-        # Neu co bat ky loi parse nao, khong can thiep vao flow response goc
         pass
