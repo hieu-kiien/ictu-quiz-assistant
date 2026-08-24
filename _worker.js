@@ -312,7 +312,7 @@ Nhiệm vụ: Giải chính xác toàn bộ danh sách câu hỏi trắc nghiệ
 Quy tắc:
 1. "correct_option_indices": mảng chứa các chỉ số (index từ 0) của phương án đúng. Nếu là câu chọn 1 đáp án thì có 1 phần tử [0], nếu chọn nhiều đáp án thì chứa tất cả các phương án đúng [0, 2].
 2. "hint_text": từ hoặc cụm từ chính xác cần điền vào ô trống cho câu điền từ.
-3. Chỉ trả về JSON thuần, KHÔNG kèm markdown \\`\\`\\`json hay giải thích.
+3. Chỉ trả về JSON thuần, không kèm định dạng markdown hay giải thích thừa.
 `;
 
   const payload = {
