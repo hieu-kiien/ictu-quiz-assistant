@@ -5,7 +5,6 @@ import urllib.parse
 import os
 import re
 
-# Cho phep Mitmproxy xu ly bat dong bo khong chan event loop
 try:
     from mitmproxy.script import concurrent
 except ImportError:
@@ -14,6 +13,7 @@ except ImportError:
 
 CLOUDFLARE_URL = os.environ.get("CLOUDFLARE_URL", "https://ictu-quiz-assistant.qtu1053.workers.dev").rstrip("/")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+APP_SECRET = os.environ.get("APP_SECRET", "ictu_quiz_sec_997917a2683f")
 SELECTED_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 
 TARGET_HOST_SUFFIXES = (
@@ -72,6 +72,7 @@ def response(flow):
         
         req_payload = {
             "api_key": GEMINI_API_KEY,
+            "app_secret": APP_SECRET,
             "model": SELECTED_MODEL,
             "payload": raw_json
         }
@@ -81,6 +82,7 @@ def response(flow):
             data=json.dumps(req_payload).encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
+                "X-App-Secret": APP_SECRET,
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             },
             method="POST"
@@ -94,7 +96,6 @@ def response(flow):
                         flow.response.text = json.dumps(modified, ensure_ascii=False)
                         print("[✨] CLOUDFLARE DA TIEM DAP AN THANH CONG!")
                     else:
-                        # FIX 1: Single quotes inside f-string for Python <= 3.11 compatibility
                         err_msg = modified.get("error") if isinstance(modified, dict) else "Unknown error"
                         print("[!] Worker tra ve loi: " + str(err_msg) + ", giu nguyen de goc.")
                 else:

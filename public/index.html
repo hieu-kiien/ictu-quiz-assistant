@@ -218,6 +218,11 @@
                 Cấu hình Bộ não AI
             </div>
 
+                        <div class="form-group">
+                <label>Mã bảo vệ Server (App Secret Token):</label>
+                <input type="password" id="appSecretInput" value="ictu_quiz_sec_997917a2683f" placeholder="Nhập Secret Token">
+                <div style="font-size: 0.75rem; color: #10b981; margin-top: 4px;">🔒 Khóa Worker chống kẻ lạ gọi trộm đốt hạn ngạch.</div>
+            </div>
             <div class="form-group">
                 <label>Google Gemini API Key:</label>
                 <div class="input-wrap">
@@ -322,6 +327,7 @@
             const model = document.getElementById("modelSelect").value;
             const host = document.getElementById("targetHostInput").value.trim();
             localStorage.setItem("gemini_api_key", key);
+            localStorage.setItem("app_secret", document.getElementById("appSecretInput").value.trim());
             localStorage.setItem("gemini_model", model);
             localStorage.setItem("target_host", host);
             if (showBanner) showToast("Đã lưu cấu hình thành công (" + model + ")!");
@@ -332,6 +338,8 @@
             const model = localStorage.getItem("gemini_model") || "gemini-3.6-flash";
             const host = localStorage.getItem("target_host") || "lms.ictu.edu.vn";
             if (key) document.getElementById("apiKeyInput").value = key;
+            const sec = localStorage.getItem("app_secret") || "ictu_quiz_sec_997917a2683f";
+            document.getElementById("appSecretInput").value = sec;
             document.getElementById("modelSelect").value = model;
             document.getElementById("targetHostInput").value = host;
         }
@@ -360,8 +368,8 @@
             try {
                 const res = await fetch("/api/test-solve", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ api_key: apiKey, model: model })
+                    headers: { "Content-Type": "application/json", "X-App-Secret": document.getElementById("appSecretInput").value.trim() },
+                    body: JSON.stringify({ api_key: apiKey, app_secret: document.getElementById("appSecretInput").value.trim(), model: model })
                 });
 
                 const data = await res.json();
