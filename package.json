@@ -1,0 +1,9 @@
+{
+  "name": "ictu-quiz-assistant",
+  "version": "1.0.0",
+  "description": "ICTU Quiz Assistant - Cloudflare Edge AI Suite",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler pages deploy public"
+  }
+}
