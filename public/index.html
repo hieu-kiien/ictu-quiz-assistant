@@ -16,7 +16,6 @@
         .badge-status { font-size: 0.85rem; padding: 6px 14px; border-radius: 20px; }
         .result-box { background-color: #070b13; border: 1px solid #24324f; border-radius: 12px; padding: 18px; margin-top: 15px; }
         .highlight-dot { color: #4ade80; font-weight: bold; background: rgba(74, 222, 128, 0.1); padding: 2px 6px; border-radius: 4px; }
-        .code-snippet { background: #070b13; border: 1px solid #24324f; border-radius: 8px; padding: 10px 14px; font-family: monospace; font-size: 0.85rem; color: #38bdf8; }
     </style>
 </head>
 <body class="p-3 p-md-4">
@@ -37,14 +36,14 @@
 
         <!-- Cấu hình API -->
         <div class="card p-4 mb-3">
-            <h5 class="fw-bold mb-3"><i class="bi bi-sliders text-info me-2"></i>Cấu hình Bộ não AI (Dòng Gemini 3.x)</h5>
+            <h5 class="fw-bold mb-3"><i class="bi bi-sliders text-info me-2"></i>Cấu hình Bộ não AI (Gemini 3.x)</h5>
             <div class="mb-3">
                 <label class="form-label text-light">Google Gemini API Key:</label>
                 <div class="input-group">
-                    <input type="password" id="apiKeyInput" class="form-control" placeholder="Dán mã API Key của bạn">
+                    <input type="password" id="apiKeyInput" class="form-control" placeholder="Dán mã API Key dạng AIzaSy..." onchange="saveConfig(false)">
                     <button class="btn btn-outline-secondary" type="button" onclick="toggleApiKey()"><i class="bi bi-eye" id="eyeIcon"></i></button>
                 </div>
-                <small class="text-secondary">Lấy miễn phí tại <a href="https://aistudio.google.com" target="_blank" class="text-info">aistudio.google.com</a> (Lưu trữ an toàn trên thiết bị của bạn)</small>
+                <small class="text-secondary">Lấy API Key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" class="text-info">aistudio.google.com/apikey</a> (Bắt đầu bằng <code>AIzaSy...</code>)</small>
             </div>
             <div class="row g-3">
                 <div class="col-md-6">
@@ -71,7 +70,7 @@
                 </div>
             </div>
             <div class="mt-3 text-end">
-                <button class="btn btn-primary px-4" onclick="saveConfig()"><i class="bi bi-save me-1"></i> Lưu cấu hình</button>
+                <button class="btn btn-primary px-4" onclick="saveConfig(true)"><i class="bi bi-save me-1"></i> Lưu cấu hình</button>
             </div>
         </div>
 
@@ -153,28 +152,32 @@
             document.getElementById("targetHostInput").value = host;
         }
 
-        function saveConfig() {
+        function saveConfig(showAlert = true) {
             const key = document.getElementById("apiKeyInput").value.trim();
             const model = getSelectedModel();
             const host = document.getElementById("targetHostInput").value.trim();
             localStorage.setItem("gemini_api_key", key);
             localStorage.setItem("gemini_model", model);
             localStorage.setItem("target_host", host);
-            alert("Đã lưu cấu hình thành công với Model: " + model);
+            if (showAlert) alert("Đã lưu cấu hình thành công!");
         }
 
         async function runTest() {
             const apiKey = document.getElementById("apiKeyInput").value.trim();
             const model = getSelectedModel();
             if (!apiKey) {
-                alert("Vui lòng nhập Google Gemini API Key trước khi thử nghiệm!");
+                alert("Vui lòng nhập Google Gemini API Key vào ô trên trước khi bấm Chạy thử!");
+                document.getElementById("apiKeyInput").focus();
                 return;
             }
+
+            // Tu dong luu
+            saveConfig(false);
 
             const area = document.getElementById("testResultArea");
             const box = document.getElementById("testResultContent");
             area.style.display = "block";
-            box.innerHTML = "<div class="text-secondary"><span class="spinner-border spinner-border-sm me-2 text-warning"></span> Cloudflare Edge đang gửi đề sang " + model + " giải...</div>";
+            box.innerHTML = `<div class="text-secondary"><span class="spinner-border spinner-border-sm me-2 text-warning"></span> Cloudflare Edge đang kết nối Gemini AI (${model}) để giải đề...</div>`;
 
             try {
                 const res = await fetch("/api/test-solve", {
@@ -182,10 +185,12 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ api_key: apiKey, model: model })
                 });
+                
                 const data = await res.json();
-                if (data.status === "success") {
+                
+                if (res.ok && data.status === "success") {
                     let html = `<div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle me-1"></i> Đã giải & tiêm đáp án trong ${data.time_ms} ms</span>
+                        <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle me-1"></i> Đã giải & tiêm đáp án thành công (${data.time_ms} ms)</span>
                         <small class="text-secondary fw-bold">${data.model}</small>
                     </div>`;
                     data.questions.forEach((q, i) => {
@@ -201,10 +206,16 @@
                     });
                     box.innerHTML = html;
                 } else {
-                    box.innerHTML = `<div class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i> Lỗi: ${data.message}</div>`;
+                    const errMsg = data.message || data.error || "Không thể kết nối đến API";
+                    box.innerHTML = `<div class="alert alert-danger mb-0">
+                        <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Lỗi từ Google Gemini:</h6>
+                        <p class="small mb-2">${errMsg}</p>
+                        <hr class="my-2">
+                        <small class="text-light"><strong>Gợi ý khắc phục:</strong> Hãy kiểm tra lại mã API Key trên <a href="https://aistudio.google.com/apikey" target="_blank" class="text-warning text-decoration-underline">Google AI Studio</a>. Mã API Key chuẩn phải bắt đầu bằng <code>AIzaSy...</code> và không có khoảng trắng thừa.</small>
+                    </div>`;
                 }
             } catch (e) {
-                box.innerHTML = `<div class="text-danger">Lỗi kết nối Cloudflare: ${e}</div>`;
+                box.innerHTML = `<div class="alert alert-danger mb-0"><i class="bi bi-wifi-off me-2"></i>Lỗi kết nối mạng: ${e}</div>`;
             }
         }
 
