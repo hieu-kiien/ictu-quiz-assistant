@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <h4 class="mb-0 fw-bold">ICTU Quiz Assistant</h4>
-                    <small class="text-secondary">Cloudflare Edge AI • Gemini 3.7 / 2.0 Flash</small>
+                    <small class="text-secondary">Cloudflare Edge AI • Danh sách Model Gemini Toàn Diện</small>
                 </div>
             </div>
             <span class="badge bg-success badge-status"><i class="bi bi-cloud-check me-1"></i> Cloudflare Online</span>
@@ -48,12 +48,23 @@
             </div>
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label text-light">Model AI:</label>
-                    <select id="modelSelect" class="form-select">
-                        <option value="gemini-2.0-flash" selected>Gemini 3.7 / 2.0 Flash (Siêu tốc ~0.8s)</option>
-                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (Tải nhẹ & Ổn định)</option>
-                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (Tư duy chuyên sâu)</option>
+                    <label class="form-label text-light">Chọn Model Gemini:</label>
+                    <select id="modelSelect" class="form-select" onchange="handleModelChange()">
+                        <optgroup label="⚡ Dòng Siêu tốc (Tối ưu cho thi trắc nghiệm < 1s)">
+                            <option value="gemini-2.0-flash" selected>Gemini 3.7 / 2.0 Flash (Khuyên dùng - Siêu nhanh ~0.8s)</option>
+                            <option value="gemini-2.0-flash-lite-preview-02-05">Gemini 3.5 / 2.0 Flash-Lite (Tiết kiệm tài nguyên)</option>
+                            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Tiêu chuẩn & Ổn định)</option>
+                            <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash-8B (Bản rút gọn tốc độ)</option>
+                        </optgroup>
+                        <optgroup label="🧠 Dòng Suy luận sâu (Cho câu hỏi khó / Triết học)">
+                            <option value="gemini-2.0-flash-thinking-exp">Gemini 2.0 Flash Thinking (Kèm bước suy luận)</option>
+                            <option value="gemini-1.5-pro">Gemini 1.5 / 3.1 Pro (Tư duy & Kiến thức chuyên sâu)</option>
+                        </optgroup>
+                        <option value="custom">✏️ Nhập Model ID tùy chỉnh khác...</option>
                     </select>
+                    <div id="customModelGroup" class="mt-2" style="display: none;">
+                        <input type="text" id="customModelInput" class="form-control" placeholder="Nhập model ID, ví dụ: gemini-2.0-pro-exp-02-05">
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-light">Tên miền hệ thống thi:</label>
@@ -71,7 +82,7 @@
                 <h5 class="fw-bold mb-0"><i class="bi bi-lightning-charge text-warning me-2"></i>Thử nghiệm giải đề mẫu (Test Run)</h5>
                 <button class="btn btn-warning btn-sm fw-bold px-3" onclick="runTest()"><i class="bi bi-play-fill"></i> Chạy thử ngay</button>
             </div>
-            <p class="text-secondary small mb-2">Gửi đề thi 4 dạng câu hỏi lên Cloudflare Edge để Gemini Flash giải & gắn dấu.</p>
+            <p class="text-secondary small mb-2">Gửi đề thi mẫu lên Cloudflare Edge để Gemini Flash giải & tiêm đáp án.</p>
             <div id="testResultArea" style="display: none;">
                 <div class="result-box" id="testResultContent"></div>
             </div>
@@ -101,28 +112,61 @@
             }
         }
 
+        function handleModelChange() {
+            const select = document.getElementById("modelSelect");
+            const customGroup = document.getElementById("customModelGroup");
+            if (select.value === "custom") {
+                customGroup.style.display = "block";
+            } else {
+                customGroup.style.display = "none";
+            }
+        }
+
+        function getSelectedModel() {
+            const select = document.getElementById("modelSelect");
+            if (select.value === "custom") {
+                return document.getElementById("customModelInput").value.trim() || "gemini-2.0-flash";
+            }
+            return select.value;
+        }
+
         function loadConfig() {
             const key = localStorage.getItem("gemini_api_key") || "";
             const model = localStorage.getItem("gemini_model") || "gemini-2.0-flash";
             const host = localStorage.getItem("target_host") || "lms.ictu.edu.vn";
             if (key) document.getElementById("apiKeyInput").value = key;
-            document.getElementById("modelSelect").value = model;
+            
+            const select = document.getElementById("modelSelect");
+            let found = false;
+            for (let opt of select.options) {
+                if (opt.value === model) {
+                    select.value = model;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found && model) {
+                select.value = "custom";
+                document.getElementById("customModelGroup").style.display = "block";
+                document.getElementById("customModelInput").value = model;
+            }
+
             document.getElementById("targetHostInput").value = host;
         }
 
         function saveConfig() {
             const key = document.getElementById("apiKeyInput").value.trim();
-            const model = document.getElementById("modelSelect").value;
+            const model = getSelectedModel();
             const host = document.getElementById("targetHostInput").value.trim();
             localStorage.setItem("gemini_api_key", key);
             localStorage.setItem("gemini_model", model);
             localStorage.setItem("target_host", host);
-            alert("Đã lưu cấu hình thành công!");
+            alert("Đã lưu cấu hình thành công với Model: " + model);
         }
 
         async function runTest() {
             const apiKey = document.getElementById("apiKeyInput").value.trim();
-            const model = document.getElementById("modelSelect").value;
+            const model = getSelectedModel();
             if (!apiKey) {
                 alert("Vui lòng nhập Google Gemini API Key trước khi thử nghiệm!");
                 return;
@@ -131,7 +175,7 @@
             const area = document.getElementById("testResultArea");
             const box = document.getElementById("testResultContent");
             area.style.display = "block";
-            box.innerHTML = "<div class="text-secondary"><span class="spinner-border spinner-border-sm me-2 text-warning"></span> Cloudflare Edge đang gửi đề sang Gemini Flash giải...</div>";
+            box.innerHTML = "<div class="text-secondary"><span class="spinner-border spinner-border-sm me-2 text-warning"></span> Cloudflare Edge đang gửi đề sang " + model + " giải...</div>";
 
             try {
                 const res = await fetch("/api/test-solve", {
@@ -143,7 +187,7 @@
                 if (data.status === "success") {
                     let html = `<div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle me-1"></i> Đã giải & tiêm đáp án trong ${data.time_ms} ms</span>
-                        <small class="text-secondary">${data.model}</small>
+                        <small class="text-secondary fw-bold">${data.model}</small>
                     </div>`;
                     data.questions.forEach((q, i) => {
                         html += `<div class="mb-3 pb-3 border-bottom border-secondary">`;
