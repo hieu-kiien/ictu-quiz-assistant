@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h4 class="mb-0 fw-bold">ICTU Quiz Assistant</h4>
-                    <small class="text-secondary">Cloudflare Edge AI • Thế Hệ Gemini 3.x</small>
+                    <small class="text-secondary">Cloudflare Edge AI • Tự động chuyển vùng thông minh</small>
                 </div>
             </div>
             <span class="badge bg-success badge-status"><i class="bi bi-cloud-check me-1"></i> Cloudflare Online</span>
@@ -54,8 +54,8 @@
                 <div class="col-md-6">
                     <label class="form-label text-light">Chọn Model Gemini 3.x:</label>
                     <select id="modelSelect" class="form-select" onchange="handleModelChange()">
-                        <option value="gemini-3.7-flash" selected>Gemini 3.7 Flash (Chủ lực - Siêu tốc & Thinking)</option>
-                        <option value="gemini-3.6-flash">Gemini 3.6 Flash (AI Agent & Giải đề nhanh)</option>
+                        <option value="gemini-3.6-flash" selected>Gemini 3.6 Flash (Khuyên dùng - Cực kỳ ổn định & Siêu tốc)</option>
+                        <option value="gemini-3.7-flash">Gemini 3.7 Flash (Chủ lực - Thinking Mode)</option>
                         <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Rút gọn, siêu tiết kiệm)</option>
                     </select>
                 </div>
@@ -111,7 +111,7 @@
 
         function loadConfig() {
             const key = localStorage.getItem("gemini_api_key") || "";
-            const model = localStorage.getItem("gemini_model") || "gemini-3.7-flash";
+            const model = localStorage.getItem("gemini_model") || "gemini-3.6-flash";
             const host = localStorage.getItem("target_host") || "lms.ictu.edu.vn";
             if (key) document.getElementById("apiKeyInput").value = key;
             document.getElementById("modelSelect").value = model;
